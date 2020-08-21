@@ -49,16 +49,17 @@ class RailtConfiguration implements ConfigurationInterface
      */
     public function getConfigTreeBuilder(): TreeBuilder
     {
-        $tree = new TreeBuilder();
+        $tree = new TreeBuilder('railt');
 
-        $builder = $tree->root($this->root)->children();
+        $builder = $tree->getRootNode($this->root)->children();
             $builder->scalarNode('debug')
                 ->defaultValue($this->debug)
             ->end();
 
-            $builder->scalarNode('schema')
-                ->cannotBeEmpty()
-                ->defaultValue(self::DEFAULT_SCHEMA)
+            $builder
+                ->arrayNode('schemas')
+                ->useAttributeAsKey('schema')
+                ->scalarPrototype()
             ->end();
 
             $builder->arrayNode('autoload')

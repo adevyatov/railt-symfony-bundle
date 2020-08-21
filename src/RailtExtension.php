@@ -1,4 +1,5 @@
 <?php
+
 /**
  * This file is part of Railt package.
  *
@@ -9,12 +10,12 @@ declare(strict_types=1);
 
 namespace Railt\SymfonyBundle;
 
-use Railt\Foundation\Application\Configurator;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
+use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\DependencyInjection\ConfigurableExtension;
+use Symfony\Component\HttpKernel\KernelInterface;
 
 /**
  * Class RailtExtension
@@ -32,13 +33,28 @@ class RailtExtension extends ConfigurableExtension
     private const CONFIGURATION_DEBUG_PARAMETER = 'kernel.debug';
 
     /**
-     * @param array $config
+     * @param array            $config
      * @param ContainerBuilder $container
      * @return RailtConfiguration|mixed|null|\Symfony\Component\Config\Definition\ConfigurationInterface
      */
     public function getConfiguration(array $config, ContainerBuilder $container)
     {
         return new RailtConfiguration(self::CONFIGURATION_ROOT_NODE, $this->isDebug($container));
+    }
+
+    /**
+     * @param array            $configs
+     * @param ContainerBuilder $container
+     */
+    public function loadInternal(array $configs, ContainerBuilder $container): void
+    {
+        $container->setParameter(self::CONFIGURATION_ROOT_NODE, $configs);
+        $container->setParameter(self::CONFIGURATION_ROOT_NODE . '.debug', $configs['debug']);
+        $container->setParameter(self::CONFIGURATION_ROOT_NODE . '.autoload', $configs['autoload']);
+        $container->setParameter(self::CONFIGURATION_ROOT_NODE . '.extensions', $configs['extensions']);
+
+        $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/Resources/config'));
+        $loader->load('services.yml');
     }
 
     /**
@@ -52,22 +68,5 @@ class RailtExtension extends ConfigurableExtension
         }
 
         return false;
-    }
-
-    /**
-     * @param array $configs
-     * @param ContainerBuilder $container
-     */
-    public function loadInternal(array $configs, ContainerBuilder $container): void
-    {
-        $container->setParameter(self::CONFIGURATION_ROOT_NODE, $configs);
-        $container->setParameter(self::CONFIGURATION_ROOT_NODE . '.debug', $configs['debug']);
-        $container->setParameter(self::CONFIGURATION_ROOT_NODE . '.schema', $configs['schema']);
-        $container->setParameter(self::CONFIGURATION_ROOT_NODE . '.autoload', $configs['autoload']);
-        $container->setParameter(self::CONFIGURATION_ROOT_NODE . '.extensions', $configs['extensions']);
-
-        $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/Resources/config'));
-
-        $loader->load('services.yml');
     }
 }

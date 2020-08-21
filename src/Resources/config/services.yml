@@ -26,31 +26,42 @@ services:
     #
     ##############################################################
 
-    Railt\Io\File:
-        factory: Railt\Io\File::fromPathname
-        arguments: ['%railt.schema%']
+#    Phplrt\Io\File:
+#        factory: Phplrt\Io\File::fromPathname
+#        arguments: ['%railt.schema%']
+#
+#    Railt\Io\Readable:
+#        alias: Phplrt\Io\File
 
-    Railt\Io\Readable:
-        alias: Railt\Io\File
+    Railt\Foundation\ApplicationInterface:
+        alias: Railt\Foundation\Application
 
-    Railt\Foundation\Application\Configurator:
-        factory: ['Railt\Foundation\Application\Configurator', 'getInstance']
-        calls:
-            - method: setContainer
-              arguments: ['@Railt\Container\ContainerInterface']
-            - method: setDebugMode
-              arguments: ['%railt.debug%']
-            - method: setExtensions
-              arguments: ['%railt.extensions%']
-            - method: setAutoloadPaths
-              arguments: ['%railt.autoload%']
-            - method: setSchema
-              arguments: ['@Railt\Io\Readable']
+    Railt\Foundation\Application:
+        arguments:
+            - '%kernel.debug%'
+            - '@Railt\Container\ContainerInterface'
+
+#    Railt\Foundation\Application\Configurator:
+#        factory: ['Railt\Foundation\Application\Configurator', 'getInstance']
+#        calls:
+#            - method: setContainer
+#              arguments: ['@Railt\Container\ContainerInterface']
+#            - method: setDebugMode
+#              arguments: ['%railt.debug%']
+#            - method: setExtensions
+#              arguments: ['%railt.extensions%']
+#            - method: setAutoloadPaths
+#              arguments: ['%railt.autoload%']
+#            - method: setSchema
+#              arguments: ['@Railt\Io\Readable']
+
+
+    Railt\SymfonyBundle\Config:
+        arguments:
+            - '@service_container'
 
     Railt\SymfonyBundle\Controller\GraphQLController:
-        arguments:
-            - '@Railt\Container\ContainerInterface'
-            - '@Railt\Foundation\Application\Configurator'
+        autowire: true
         tags: ['controller.service_arguments']
 
     Railt\SymfonyBundle\Storage\PSR6StorageBridge:

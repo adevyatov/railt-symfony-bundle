@@ -31,6 +31,7 @@ trait InteractWithApplication
         \assert(\property_exists($this, 'kernel') && $this->kernel instanceof KernelInterface,
             'Symfony HttpKernel should be sets up in $this->kernel test class field');
 
+        dd('поправить')
         $this->factory = $this->kernel->getContainer()
             ->get(Application\Configurator::class);
     }
