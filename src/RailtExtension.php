@@ -53,6 +53,10 @@ class RailtExtension extends ConfigurableExtension
         $container->setParameter(self::CONFIGURATION_ROOT_NODE . '.autoload', $configs['autoload']);
         $container->setParameter(self::CONFIGURATION_ROOT_NODE . '.extensions', $configs['extensions']);
 
+        foreach ($configs['schemas'] as $name => $schema) {
+            $container->setParameter(self::CONFIGURATION_ROOT_NODE . '.schemas.' . $name, $schema);
+        }
+
         $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/Resources/config'));
         $loader->load('services.yml');
     }

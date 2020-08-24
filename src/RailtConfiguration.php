@@ -58,7 +58,9 @@ class RailtConfiguration implements ConfigurationInterface
 
             $builder
                 ->arrayNode('schemas')
+                ->isRequired()
                 ->useAttributeAsKey('schema')
+                ->requiresAtLeastOneElement()
                 ->scalarPrototype()
             ->end();
 
