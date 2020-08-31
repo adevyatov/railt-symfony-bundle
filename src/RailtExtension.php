@@ -10,8 +10,11 @@ declare(strict_types=1);
 
 namespace Railt\SymfonyBundle;
 
+use Railt\Foundation\Application;
+use Railt\SymfonyBundle\Storage\CacheAdapter;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\HttpKernel\DependencyInjection\ConfigurableExtension;
@@ -56,6 +59,15 @@ class RailtExtension extends ConfigurableExtension
         foreach ($configs['schemas'] as $name => $schema) {
             $container->setParameter(self::CONFIGURATION_ROOT_NODE . '.schemas.' . $name, $schema);
         }
+
+        // cache
+        $cacheRef = null;
+        if ($configs['cache'] ?? false) {
+            $cacheRef = new Reference($configs['cache']);
+        }
+
+        $cache = new Definition(CacheAdapter::class, [$cacheRef]);
+        $container->setDefinition(CacheAdapter::class, $cache);
 
         $loader = new YamlFileLoader($container, new FileLocator(__DIR__ . '/Resources/config'));
         $loader->load('services.yml');

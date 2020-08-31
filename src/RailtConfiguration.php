@@ -64,6 +64,8 @@ class RailtConfiguration implements ConfigurationInterface
                 ->scalarPrototype()
             ->end();
 
+            $builder->scalarNode('cache')->end();
+
             $builder->arrayNode('autoload')
                 ->defaultValue([])
                 ->prototype('scalar')->end()

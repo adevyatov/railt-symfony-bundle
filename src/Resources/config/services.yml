@@ -18,43 +18,17 @@ services:
     Railt\Container\ContainerInterface:
         alias: Railt\Container\Container
 
-    ##############################################################
-    # Register the Railt Application Configurator
-    # ============================================================
-    #
-    # TODO Add a description
-    #
-    ##############################################################
-
-#    Phplrt\Io\File:
-#        factory: Phplrt\Io\File::fromPathname
-#        arguments: ['%railt.schema%']
-#
-#    Railt\Io\Readable:
-#        alias: Phplrt\Io\File
-
     Railt\Foundation\ApplicationInterface:
         alias: Railt\Foundation\Application
 
     Railt\Foundation\Application:
         arguments:
-            - '%kernel.debug%'
+            - '%railt.debug%'
             - '@Railt\Container\ContainerInterface'
+            - '@Railt\SymfonyBundle\Storage\CacheAdapter'
 
-#    Railt\Foundation\Application\Configurator:
-#        factory: ['Railt\Foundation\Application\Configurator', 'getInstance']
-#        calls:
-#            - method: setContainer
-#              arguments: ['@Railt\Container\ContainerInterface']
-#            - method: setDebugMode
-#              arguments: ['%railt.debug%']
-#            - method: setExtensions
-#              arguments: ['%railt.extensions%']
-#            - method: setAutoloadPaths
-#              arguments: ['%railt.autoload%']
-#            - method: setSchema
-#              arguments: ['@Railt\Io\Readable']
-
+    Railt\SymfonyBundle\Container\StopwatchProxy:
+        autowire: true
 
     Railt\SymfonyBundle\Config:
         arguments:
@@ -63,8 +37,3 @@ services:
     Railt\SymfonyBundle\Controller\GraphQLController:
         autowire: true
         tags: ['controller.service_arguments']
-
-    Railt\SymfonyBundle\Storage\PSR6StorageBridge:
-        public: true
-        arguments:
-            - '@Psr\Cache\CacheItemPoolInterface'

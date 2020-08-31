@@ -10,6 +10,7 @@ declare(strict_types=1);
 
 namespace Railt\SymfonyBundle\Controller;
 
+use Phplrt\Io\File;
 use Railt\Container\ContainerInterface;
 use Railt\Foundation\ApplicationInterface;
 use Railt\Http\Factory;
@@ -17,7 +18,6 @@ use Railt\Http\ResponseInterface;
 use Railt\SymfonyBundle\Config;
 use Railt\SymfonyBundle\Exception\SchemaArgumentNotFoundException;
 use Railt\SymfonyBundle\Http\SymfonyProvider;
-use Railt\SymfonyBundle\Storage\PSR6StorageBridge;
 use Symfony\Component\Config\FileLocatorInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -54,10 +54,6 @@ class GraphQLController
         $this->app = $app;
         $this->config = $config;
         $this->locator = $locator;
-
-        if (! $config->isDebug()) {
-            $app->alias(PSR6StorageBridge::class, Storage::class);
-        }
     }
 
     /**
@@ -81,7 +77,7 @@ class GraphQLController
 
     private function execute(Request $request, $schema): ResponseInterface
     {
-        $schema = \Phplrt\Io\File::fromPathname($schema);
+        $schema = File::fromPathname($schema);
         $connection = $this->app->connect($schema);
         $factory = Factory::create(new SymfonyProvider($request));
 
