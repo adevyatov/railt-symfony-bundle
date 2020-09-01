@@ -9,7 +9,7 @@ use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use Symfony\Component\Cache\Psr16Cache;
 use Symfony\Contracts\Cache\CacheInterface as SymfonyCacheInterface;
 
-class CacheAdapter implements PsrSimpleCacheInterface
+class CacheAdapter implements CacheAdapterInterface
 {
     private Psr16Cache $cache;
 
@@ -20,42 +20,42 @@ class CacheAdapter implements PsrSimpleCacheInterface
 
     public function get($key, $default = null)
     {
-        $this->cache->get($key, $default);
+        return $this->cache->get($key, $default);
     }
 
     public function set($key, $value, $ttl = null)
     {
-        $this->cache->set($key, $value, $ttl);
+        return $this->cache->set($key, $value, $ttl);
     }
 
     public function delete($key)
     {
-        $this->cache->delete($key);
+        return $this->cache->delete($key);
     }
 
     public function clear()
     {
-        $this->cache->clear();
+        return $this->cache->clear();
     }
 
     public function getMultiple($keys, $default = null)
     {
-        $this->cache->getMultiple($keys, $default);
+        return $this->cache->getMultiple($keys, $default);
     }
 
     public function setMultiple($values, $ttl = null)
     {
-        $this->cache->setMultiple($values, $ttl);
+        return $this->cache->setMultiple($values, $ttl);
     }
 
     public function deleteMultiple($keys)
     {
-        $this->cache->deleteMultiple($keys);
+        return $this->cache->deleteMultiple($keys);
     }
 
     public function has($key)
     {
-        $this->cache->has($key);
+        return $this->cache->has($key);
     }
 
 }

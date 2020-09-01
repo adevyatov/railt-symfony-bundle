@@ -21,14 +21,14 @@ services:
     Railt\Foundation\ApplicationInterface:
         alias: Railt\Foundation\Application
 
+    Railt\SymfonyBundle\Storage\CacheAdapterInterface:
+        alias: 'Railt\SymfonyBundle\Storage\CacheAdapter'
+
     Railt\Foundation\Application:
         arguments:
             - '%railt.debug%'
             - '@Railt\Container\ContainerInterface'
             - '@Railt\SymfonyBundle\Storage\CacheAdapter'
-
-    Railt\SymfonyBundle\Container\StopwatchProxy:
-        autowire: true
 
     Railt\SymfonyBundle\Config:
         arguments:
