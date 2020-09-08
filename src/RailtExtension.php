@@ -11,6 +11,7 @@ declare(strict_types=1);
 namespace Railt\SymfonyBundle;
 
 use Railt\Foundation\Application;
+use Railt\Foundation\Config\RepositoryInterface;
 use Railt\SymfonyBundle\Storage\CacheAdapter;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -51,13 +52,15 @@ class RailtExtension extends ConfigurableExtension
      */
     public function loadInternal(array $configs, ContainerBuilder $container): void
     {
-        $container->setParameter(self::CONFIGURATION_ROOT_NODE, $configs);
-        $container->setParameter(self::CONFIGURATION_ROOT_NODE . '.debug', $configs['debug']);
-        $container->setParameter(self::CONFIGURATION_ROOT_NODE . '.autoload', $configs['autoload']);
-        $container->setParameter(self::CONFIGURATION_ROOT_NODE . '.extensions', $configs['extensions']);
+        $root = self::CONFIGURATION_ROOT_NODE . '.';
+
+        $container->setParameter($root, $configs);
+        $container->setParameter($root . 'debug', $configs['debug']);
+        $container->setParameter($root . RepositoryInterface::KEY_AUTOLOAD_PATHS, $configs['autoload']);
+        $container->setParameter($root . RepositoryInterface::KEY_AUTOLOAD_EXTENSIONS, $configs['extensions']);
 
         foreach ($configs['schemas'] as $name => $schema) {
-            $container->setParameter(self::CONFIGURATION_ROOT_NODE . '.schemas.' . $name, $schema);
+            $container->setParameter($root . '.schemas.' . $name, $schema);
         }
 
         // cache

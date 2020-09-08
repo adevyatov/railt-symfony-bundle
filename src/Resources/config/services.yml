@@ -23,6 +23,7 @@ services:
 
     Railt\SymfonyBundle\Storage\CacheAdapterInterface:
         alias: 'Railt\SymfonyBundle\Storage\CacheAdapter'
+        public: true
 
     Railt\Foundation\Application:
         arguments:
@@ -32,7 +33,7 @@ services:
 
     Railt\SymfonyBundle\Config:
         arguments:
-            - '@service_container'
+            - '%railt.%'
 
     Railt\SymfonyBundle\Controller\GraphQLController:
         autowire: true

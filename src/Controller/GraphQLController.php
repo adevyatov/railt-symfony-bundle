@@ -13,6 +13,8 @@ namespace Railt\SymfonyBundle\Controller;
 use Phplrt\Io\File;
 use Railt\Container\ContainerInterface;
 use Railt\Foundation\ApplicationInterface;
+use Railt\Foundation\Config\Repository;
+use Railt\Foundation\Config\RepositoryInterface as ConfigRepositoryInterface;
 use Railt\Http\Factory;
 use Railt\Http\ResponseInterface;
 use Railt\SymfonyBundle\Config;
@@ -52,6 +54,8 @@ class GraphQLController
     public function __construct(ApplicationInterface $app, Config $config, FileLocator $locator)
     {
         $this->app = $app;
+        $this->app->get(Repository::class)->mergeWith($config->getRepository());
+
         $this->config = $config;
         $this->locator = $locator;
     }
@@ -77,7 +81,8 @@ class GraphQLController
 
     private function execute(Request $request, $schema): ResponseInterface
     {
-        $schema = File::fromPathname($schema);
+        $path = $this->config->getSchemaPath($schema);
+        $schema = File::fromPathname($path);
         $connection = $this->app->connect($schema);
         $factory = Factory::create(new SymfonyProvider($request));
 

@@ -4,34 +4,20 @@ declare(strict_types=1);
 
 namespace Railt\SymfonyBundle;
 
+use Illuminate\Support\Arr;
 use Psr\Container\ContainerInterface;
+use Railt\Foundation\Application;
+use Railt\Foundation\Config\Repository;
+use Railt\Foundation\Config\RepositoryInterface;
+use Railt\SymfonyBundle\Exception\SchemaDefinitionNotFoundException;
 
 class Config
 {
-    /**
-     * @var string
-     */
-    public const ROOT_NODE = 'railt';
-
-    /**
-     * @var string
-     */
-    public const DEBUG_NODE = 'debug';
-
-    /**
-     * @var string
-     */
-    public const CACHE_IS_ENABLED = 'cache';
-
-    /**
-     * @var string
-     */
-    private const ENDPOINTS_NODE = 'endpoints';
-
-    /**
-     * @var string
-     */
-    private const PLAYGROUND_NODE = 'playground';
+    public const NODE_ROOT = 'railt';
+    public const NODE_DEBUG = 'debug';
+    public const NODE_CACHE = 'cache';
+    public const NODE_AUTOLOAD = 'autoload';
+    public const NODE_EXTENSIONS = 'extensions';
 
     /**
      * @var bool
@@ -39,33 +25,49 @@ class Config
     private $debug;
 
     /**
-     * @var Playground
-     */
-    private $graphiql;
-
-    /**
      * @var bool
      */
     private $cache;
+
+    /**
+     * @var array
+     */
+    private $config;
 
     /**
      * Config constructor.
      *
      * @param array $config
      */
-    public function __construct(\Symfony\Component\DependencyInjection\ContainerInterface $container)
+    public function __construct(array $config)
     {
-        $config = $container->getParameter('railt');
+        $this->config = $config;
+        $this->debug = $config[static::NODE_DEBUG] ?? false;
+        $this->cache = $config[static::NODE_CACHE] ?? ! $this->debug;
+    }
 
-        $this->debug = $config[static::DEBUG_NODE] ?? false;
+    public function getConfig(string $key = null)
+    {
+        return Arr::get($this->config, $key);
+    }
 
-        foreach ($config[static::ENDPOINTS_NODE] ?? [] as $name => $endpoint) {
-            $this->endpoints[$name] = new Endpoint($this, $name, $endpoint);
+    public function getRepository(): RepositoryInterface
+    {
+        $repository = new Repository();
+        $repository->set(self::NODE_AUTOLOAD . '.paths', $this->config[self::NODE_AUTOLOAD]);
+        $repository->set(self::NODE_EXTENSIONS, $this->config[self::NODE_EXTENSIONS]);
+
+        return $repository;
+    }
+
+    public function getSchemaPath(string $schema)
+    {
+        if (!\array_key_exists($schema, $this->config['schemas'])) {
+            $allowed = \array_keys($this->config['schemas']);
+            throw new SchemaDefinitionNotFoundException($schema, $allowed);
         }
 
-        //$this->graphiql = new Playground($this, (array)($config[static::PLAYGROUND_NODE] ?? []));
-
-        $this->cache = $config[static::CACHE_IS_ENABLED] ?? ! $this->debug;
+        return $this->config['schemas'][$schema];
     }
 
     /**
@@ -91,24 +93,4 @@ class Config
 
         return (bool)$this->debug;
     }
-
-    /**
-     * @param Registrar $registrar
-     */
-    public function register(Registrar $registrar): void
-    {
-        foreach ($this->getEndpoints() as $endpoint) {
-            $endpoint->register($registrar);
-        }
-
-        $this->getPlayground()->register($registrar);
-    }
-
-    ///**
-    // * @return Playground
-    // */
-    //public function getPlayground(): Playground
-    //{
-    //    return $this->graphiql;
-    //}
 }
