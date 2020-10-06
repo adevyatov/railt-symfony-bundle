@@ -76,6 +76,10 @@ class GraphQLController
         $jsonResponse = new JsonResponse($response->render(), $response->getStatusCode(), [], true);
         $jsonResponse->setEncodingOptions($response->getJsonOptions());
 
+        if ($this->config->isDebug()) {
+            $jsonResponse->headers->set('Symfony-Debug-Toolbar-Replace', 1);
+        }
+
         return $jsonResponse;
     }
 
