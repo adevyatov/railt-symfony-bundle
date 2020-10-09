@@ -24,6 +24,7 @@ use Symfony\Component\Config\FileLocatorInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Config\FileLocator;
+use Symfony\Component\Stopwatch\Stopwatch;
 
 /**
  * Class GraphQLController
@@ -46,18 +47,24 @@ class GraphQLController
     private $locator;
 
     /**
+     * @var Stopwatch|null
+     */
+    private $stopwatch;
+
+    /**
      * GraphQLController constructor.
      *
      * @param ContainerInterface $container
      * @param Configurator       $config
      */
-    public function __construct(ApplicationInterface $app, Config $config, FileLocator $locator)
+    public function __construct(ApplicationInterface $app, Config $config, FileLocator $locator, ?Stopwatch $stopwatch)
     {
         $this->app = $app;
         $this->app->get(Repository::class)->mergeWith($config->getRepository());
 
         $this->config = $config;
         $this->locator = $locator;
+        $this->stopwatch = $stopwatch;
     }
 
     /**
@@ -85,12 +92,29 @@ class GraphQLController
 
     private function execute(Request $request, $schema): ResponseInterface
     {
-        $path = $this->config->getSchemaPath($schema);
-        $schema = File::fromPathname($path);
-        $connection = $this->app->connect($schema);
-        $factory = Factory::create(new SymfonyProvider($request));
+        return $this->trace('railt.init', function () use ($request, $schema) {
+            $path = $this->config->getSchemaPath($schema);
+            $schema = File::fromPathname($path);
+            $connection = $this->trace('railt.connect', fn () => $this->app->connect($schema));
+            $factory = Factory::create(new SymfonyProvider($request));
 
-        return $connection->request($factory);
+            return $this->trace('railt.request', fn () => $connection->request($factory));
+        });
+    }
+
+    private function trace(string $name, \Closure $closure)
+    {
+        if ($this->stopwatch) {
+            $this->stopwatch->start($name);
+        }
+
+        $result = $closure();
+
+        if ($this->stopwatch) {
+            $this->stopwatch->stop($name);
+        }
+
+        return $result;
     }
 
     ///**
