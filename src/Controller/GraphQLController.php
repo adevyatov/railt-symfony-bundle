@@ -14,10 +14,10 @@ use Phplrt\Io\File;
 use Railt\Container\ContainerInterface;
 use Railt\Foundation\ApplicationInterface;
 use Railt\Foundation\Config\Repository;
-use Railt\Foundation\Config\RepositoryInterface as ConfigRepositoryInterface;
 use Railt\Http\Factory;
 use Railt\Http\ResponseInterface;
 use Railt\SymfonyBundle\Config;
+use Railt\SymfonyBundle\Exception\EndpointArgumentNotFoundException;
 use Railt\SymfonyBundle\Exception\SchemaArgumentNotFoundException;
 use Railt\SymfonyBundle\Http\SymfonyProvider;
 use Symfony\Component\Config\FileLocatorInterface;
@@ -52,6 +52,11 @@ class GraphQLController
     private $stopwatch;
 
     /**
+     * @var array
+     */
+    private $mergedEndpoints;
+
+    /**
      * GraphQLController constructor.
      *
      * @param ContainerInterface $container
@@ -60,11 +65,11 @@ class GraphQLController
     public function __construct(ApplicationInterface $app, Config $config, FileLocator $locator, ?Stopwatch $stopwatch)
     {
         $this->app = $app;
-        $this->app->get(Repository::class)->mergeWith($config->getRepository());
-
         $this->config = $config;
         $this->locator = $locator;
         $this->stopwatch = $stopwatch;
+
+        $this->mergeConfig();
     }
 
     /**
@@ -72,13 +77,13 @@ class GraphQLController
      * @throws \LogicException
      * @return mixed
      */
-    public function handleAction(Request $request, ?string $schema)
+    public function handleAction(Request $request, ?string $endpoint)
     {
-        if (!$schema) {
-            throw new SchemaArgumentNotFoundException();
+        if (!$endpoint) {
+            throw new EndpointArgumentNotFoundException();
         }
 
-        $response = $this->execute($request, $schema);
+        $response = $this->execute($request, $endpoint);
 
         $jsonResponse = new JsonResponse($response->render(), $response->getStatusCode(), [], true);
         $jsonResponse->setEncodingOptions($response->getJsonOptions());
@@ -90,12 +95,14 @@ class GraphQLController
         return $jsonResponse;
     }
 
-    private function execute(Request $request, $schema): ResponseInterface
+    private function execute(Request $request, $endpoint): ResponseInterface
     {
-        return $this->trace('railt.init', function () use ($request, $schema) {
-            $path = $this->config->getSchemaPath($schema);
-            $schema = File::fromPathname($path);
-            $connection = $this->trace('railt.connect', fn () => $this->app->connect($schema));
+        return $this->trace('railt.init', function () use ($request, $endpoint) {
+            $this->mergeConfig($endpoint);
+
+            $schema = $this->config->getSchemaPath($endpoint);
+            $endpoint = File::fromPathname($schema);
+            $connection = $this->trace('railt.connect', fn () => $this->app->connect($endpoint));
             $factory = Factory::create(new SymfonyProvider($request));
 
             return $this->trace('railt.request', fn () => $connection->request($factory));
@@ -115,6 +122,16 @@ class GraphQLController
         }
 
         return $result;
+    }
+
+    private function mergeConfig(string $endpoint = null)
+    {
+        if (isset($this->mergedEndpoints[$endpoint])) {
+            return;
+        }
+
+        $this->app->get(Repository::class)->mergeWith($this->config->getConfigRepository($endpoint));
+        $this->mergedEndpoints[$endpoint] = true;
     }
 
     ///**

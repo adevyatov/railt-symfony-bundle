@@ -59,8 +59,8 @@ class RailtExtension extends ConfigurableExtension
         $container->setParameter($root . RepositoryInterface::KEY_AUTOLOAD_PATHS, $configs['autoload']);
         $container->setParameter($root . RepositoryInterface::KEY_AUTOLOAD_EXTENSIONS, $configs['extensions']);
 
-        foreach ($configs['schemas'] as $name => $schema) {
-            $container->setParameter($root . '.schemas.' . $name, $schema);
+        foreach ($configs['endpoints'] as $name => $config) {
+            $container->setParameter($root . '.endpoints.' . $name, $config);
         }
 
         // cache

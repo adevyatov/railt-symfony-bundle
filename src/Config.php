@@ -4,21 +4,14 @@ declare(strict_types=1);
 
 namespace Railt\SymfonyBundle;
 
-use Illuminate\Support\Arr;
-use Psr\Container\ContainerInterface;
-use Railt\Foundation\Application;
+use DirectoryIterator;
 use Railt\Foundation\Config\Repository;
 use Railt\Foundation\Config\RepositoryInterface;
+use Railt\SymfonyBundle\Exception\EndpointDefinitionNotFoundException;
 use Railt\SymfonyBundle\Exception\SchemaDefinitionNotFoundException;
 
 class Config
 {
-    public const NODE_ROOT = 'railt';
-    public const NODE_DEBUG = 'debug';
-    public const NODE_CACHE = 'cache';
-    public const NODE_AUTOLOAD = 'autoload';
-    public const NODE_EXTENSIONS = 'extensions';
-
     /**
      * @var bool
      */
@@ -42,44 +35,65 @@ class Config
     public function __construct(array $config)
     {
         $this->config = $config;
-        $this->debug = $config[static::NODE_DEBUG] ?? false;
-        $this->cache = $config[static::NODE_CACHE] ?? ! $this->debug;
+        $this->debug = $config['debug'] ?? false;
+        $this->cache = $config['cache'] ?? !$this->debug;
     }
 
-    public function getConfig(string $key = null)
+    public function getConfigRepository(string $endpoint = null): RepositoryInterface
     {
-        return Arr::get($this->config, $key);
-    }
+        $config = new Repository();
 
-    public function getRepository(): RepositoryInterface
-    {
-        $repository = new Repository();
-        $repository->set(self::NODE_AUTOLOAD . '.paths', $this->config[self::NODE_AUTOLOAD]);
-        $repository->set(self::NODE_EXTENSIONS, $this->config[self::NODE_EXTENSIONS]);
+        if ($endpoint) {
+            if (!isset($this->config['endpoints'][$endpoint])) {
+                throw new EndpointDefinitionNotFoundException($endpoint, \array_keys($this->config['endpoints']));
+            }
 
-        return $repository;
-    }
+            $autoloads = [];
+            foreach ($this->config['endpoints'][$endpoint]['autoload'] as $path) {
+                $autoloads = \array_merge($autoloads, $this->getAutoloadFiles($path));
+            }
 
-    public function getSchemaPath(string $schema)
-    {
-        if (!\array_key_exists($schema, $this->config['schemas'])) {
-            $allowed = \array_keys($this->config['schemas']);
-            throw new SchemaDefinitionNotFoundException($schema, $allowed);
+            $config->set(RepositoryInterface::KEY_EXTENSIONS, $this->config['endpoints'][$endpoint]['extensions']);
+            $config->set(RepositoryInterface::KEY_AUTOLOAD_FILES, $autoloads);
+
+            return $config;
         }
 
-        return $this->config['schemas'][$schema];
+        if ($this->config['extensions']) {
+            $config->set(RepositoryInterface::KEY_EXTENSIONS, $this->config['extensions']);
+        }
+
+        $globalAutoloads = [];
+        foreach ($this->config['autoload'] as $path) {
+            $globalAutoloads = \array_merge($globalAutoloads, $this->getAutoloadFiles($path));
+        }
+
+        if ($globalAutoloads) {
+            $config->set(RepositoryInterface::KEY_AUTOLOAD_PATHS, $this->config['autoload']);
+        }
+
+        return $config;
+    }
+
+    public function getSchemaPath(string $endpoint)
+    {
+        if (!\array_key_exists($endpoint, $this->config['endpoints'])) {
+            throw new EndpointDefinitionNotFoundException($endpoint, \array_keys($this->config['endpoints']));
+        }
+
+        return $this->config['endpoints'][$endpoint]['schema'];
     }
 
     /**
      * @return bool
      */
-    public function isCacheEnabled(): bool
+    public function isCacheEnabled(string $endpoint): bool
     {
         if (\is_string($this->cache) && Str::lower($this->cache) === 'false') {
             return false;
         }
 
-        return (bool)$this->cache;
+        return (bool) $this->cache;
     }
 
     /**
@@ -91,6 +105,28 @@ class Config
             return false;
         }
 
-        return (bool)$this->debug;
+        return (bool) $this->debug;
+    }
+
+    protected function getAutoloadFiles(string $path): array
+    {
+        $files = [];
+        $directory = new DirectoryIterator($path);
+
+        foreach ($directory as $item) {
+            if ($item->isDot()) {
+                continue;
+            }
+
+            if ($item->isDir()) {
+                $files = \array_merge($files, $this->getAutoloadFiles($item->getPathname()));
+            }
+
+            if ($item->isFile() && \in_array($item->getExtension(), ['graphqls', 'graphql'], true)) {
+                $files[] = $item->getPathname();
+            }
+        }
+
+        return $files;
     }
 }

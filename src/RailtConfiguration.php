@@ -57,24 +57,23 @@ class RailtConfiguration implements ConfigurationInterface
             ->end();
 
             $builder
-                ->arrayNode('schemas')
+                ->arrayNode('endpoints')
                 ->isRequired()
-                ->useAttributeAsKey('schema')
+                ->useAttributeAsKey('name')
                 ->requiresAtLeastOneElement()
-                ->scalarPrototype()
+                ->arrayPrototype()
+                    ->children()
+                        ->scalarNode('schema')->isRequired()->end()
+                        ->arrayNode('autoload')->defaultValue([])->prototype('scalar')->end()->end()
+                        ->arrayNode('extensions')->defaultValue([])->prototype('scalar')->end()->end()
+                    ->end()
+                ->end()
             ->end();
 
             $builder->scalarNode('cache')->end();
+            $builder->arrayNode('autoload')->defaultValue([])->prototype('scalar')->end()->end();
+            $builder->arrayNode('extensions')->defaultValue([])->prototype('scalar')->end()->end();
 
-            $builder->arrayNode('autoload')
-                ->defaultValue([])
-                ->prototype('scalar')->end()
-            ->end();
-
-            $builder->arrayNode('extensions')
-                ->defaultValue([])
-                ->prototype('scalar')->end()
-            ->end();
         $builder->end();
 
         return $tree;
