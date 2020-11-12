@@ -49,7 +49,7 @@ class Config
             }
 
             $autoloads = [];
-            foreach ($this->config['endpoints'][$endpoint]['autoload'] as $path) {
+            foreach ($this->config['endpoints'][$endpoint]['autoload'] ?? [] as $path) {
                 $autoloads = \array_merge($autoloads, $this->getAutoloadFiles($path));
             }
 
