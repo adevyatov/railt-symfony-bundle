@@ -45,7 +45,7 @@ class Config
 
         if ($endpoint) {
             if (!isset($this->config['endpoints'][$endpoint])) {
-                throw new EndpointDefinitionNotFoundException($endpoint, \array_keys($this->config['endpoints']));
+                throw new EndpointDefinitionNotFoundException($endpoint, \array_keys($this->config['endpoints'] ?? []));
             }
 
             $autoloads = [];
