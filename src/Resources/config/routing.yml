@@ -3,4 +3,3 @@ railt.graphql:
     methods: [ 'GET', 'POST', 'PATCH', 'PUT' ]
     defaults:
         _controller: Railt\SymfonyBundle\Controller\GraphQLController::handleAction
-        schema: '%schemas.default%'
